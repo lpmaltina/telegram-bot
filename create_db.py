@@ -1,4 +1,5 @@
 import os
+
 import pandas as pd
 import sqlite3
 
@@ -38,28 +39,19 @@ class DB:
         )
         self._conn.commit()
 
-    def get_text_by_id(self, id_text: int) -> str:
-        """Return text by its id."""
-        self._cur.execute(
-            f"""SELECT text
-            FROM Texts
-            WHERE id_text = '{id_text}'"""
-        )
-        return self._cur.fetchone()[0]
-
     def __del__(self) -> None:
         """Close the cursor and the connection to the database."""
         self._cur.close()
         self._conn.close()
 
 
-folder = "data"
-csv_path = os.path.join(folder, "data.csv")
-db_path = os.path.join(folder, "texts.db")
+if __name__ == "__main__":
+    folder = "data"
+    csv_path = os.path.join(folder, "data.csv")
+    db_path = os.path.join(folder, "texts.db")
 
-df = pd.read_csv(csv_path)
-data = list(zip(df.index, df["review"]))
+    df = pd.read_csv(csv_path)
+    data = list(zip(df.index, df["review"]))
 
-db = DB(db_path)
-db.add_data(data)
-print(db.get_text_by_id(1))
+    db = DB(db_path)
+    db.add_data(data)
