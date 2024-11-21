@@ -46,10 +46,9 @@ class DB:
 
 
 if __name__ == "__main__":
-    folder = "data"
+    folder = os.path.join("..", "data")
     csv_path = os.path.join(folder, "data.csv")
     db_path = os.path.join(folder, "texts.db")
-
     df = pd.read_csv(csv_path)
     data = list(zip(df.index, df["review"]))
 
