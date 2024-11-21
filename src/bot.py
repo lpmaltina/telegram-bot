@@ -9,12 +9,12 @@ import db_api
 from dotenv import load_dotenv
 
 load_dotenv()
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 START_TEXT = """Добро пожаловать!
 Чтобы получить текст по id, используйте команду /get_text <id>.
 id должен быть целым числом."""
 logging.basicConfig(level=logging.INFO)
-bot = Bot(token=TELEGRAM_TOKEN)
+bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
 
@@ -33,7 +33,7 @@ async def start(message: types.Message):
 async def get_text_by_id(message):
     id_text = get_id_from_message(message)
     text = await db_api.get_text_by_id(id_text)
-    await message.answer(text)
+    await message.answer(text.body)
 
 
 async def main():
