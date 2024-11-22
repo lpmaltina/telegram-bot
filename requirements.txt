@@ -1,5 +1,6 @@
-aiogram
-aiosqlite
-fastapi[all]
-pandas
-python-dotenv
+aiogram~=3.15.0
+aiohttp~=3.10.11
+aiosqlite~=0.20.0
+fastapi[all]~=0.115.5
+pandas~=2.2.3
+python-dotenv~=1.0.1
