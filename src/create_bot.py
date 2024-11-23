@@ -12,6 +12,7 @@ HOST = os.getenv("HOST")
 PORT = int(os.getenv("PORT"))
 WEBHOOK_PATH = f"/{BOT_TOKEN}"
 BASE_URL = os.getenv("BASE_URL")
+ADMIN_ID = os.getenv("ADMIN_ID")
 
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
