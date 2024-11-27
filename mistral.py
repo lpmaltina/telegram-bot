@@ -5,16 +5,13 @@ from mistralai import Mistral
 
 load_dotenv()
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
+client = Mistral(api_key=MISTRAL_API_KEY)
 
-
-def get_mistral_answer(
-        content,
-        model="open-mistral-nemo",
-        api_key=MISTRAL_API_KEY
+async def get_mistral_answer(
+    content,
+    model="open-mistral-nemo",
 ):
-    client = Mistral(api_key=api_key)
-
-    response = client.chat.complete(
+    response = await client.chat.stream_async(
         model=model,
         messages=[
              {
@@ -23,7 +20,11 @@ def get_mistral_answer(
              },
         ],
     )
-    return response.choices[0].message.content
+    text = []
+    async for chunk in response:
+        if chunk.data.choices[0].delta.content is not None:
+            text.append(chunk.data.choices[0].delta.content)
+    return "".join(text)
 
 
 if __name__ == "__main__":
