@@ -1,13 +1,24 @@
+import os
+
+from dotenv import load_dotenv
 from fastapi import FastAPI
+from mistralai import Mistral
 from starlette.responses import JSONResponse
 
 from src.database.dao import ReviewDAO
 from src.database.schemas import SReviewAdd, SReviewUpdate
+from src.mistral import get_mistral_answer
+
+load_dotenv()
+
+MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
+MODEL = "open-mistral-nemo"
+client = Mistral(api_key=MISTRAL_API_KEY)
 
 app = FastAPI()
 
 
-@app.get("/get_all", tags=["Тексты"], summary="Получить все тексты")
+@app.get("/get_all", tags=["Работа с базой данных текстов"], summary="Получить все тексты")
 async def get_all() -> JSONResponse:
     reviews = await ReviewDAO.find_all()
     if reviews:
@@ -24,7 +35,7 @@ async def get_all() -> JSONResponse:
         )
 
 
-@app.get("/get/{data_id}", tags=["Тексты"], summary="Получить текст по id")
+@app.get("/get/{data_id}", tags=["Работа с базой данных текстов"], summary="Получить текст по id")
 async def get_by_id(data_id: int) -> JSONResponse:
     review = await ReviewDAO.find_by_id(data_id=data_id)
     if review is not None:
@@ -41,7 +52,7 @@ async def get_by_id(data_id: int) -> JSONResponse:
     )
 
 
-@app.post("/add", tags=["Тексты"], summary="Добавить текст")
+@app.post("/add", tags=["Работа с базой данных текстов"], summary="Добавить текст")
 async def add(review: SReviewAdd):
     check = await ReviewDAO.add(**review.dict())
     if check:
@@ -55,7 +66,7 @@ async def add(review: SReviewAdd):
     )
 
 
-@app.put("/edit", tags=["Тексты"], summary="Редактировать текст по id")
+@app.put("/edit", tags=["Работа с базой данных текстов"], summary="Редактировать текст по id")
 async def edit(review: SReviewUpdate) -> JSONResponse:
     check = await ReviewDAO.update(filter_by={"id": review.id}, review=review.review)
     if check:
@@ -69,7 +80,7 @@ async def edit(review: SReviewUpdate) -> JSONResponse:
     )
 
 
-@app.delete("/delete/{data_id}", tags=["Тексты"], summary="Удалить текст по id")
+@app.delete("/delete/{data_id}", tags=["Работа с базой данных текстов"], summary="Удалить текст по id")
 async def delete_review(data_id: int) -> JSONResponse:
     check = await ReviewDAO.delete(id=data_id)
     if check:
@@ -83,7 +94,7 @@ async def delete_review(data_id: int) -> JSONResponse:
     )
 
 
-@app.delete("/delete_all", tags=["Тексты"], summary="Удалить все тексты")
+@app.delete("/delete_all", tags=["Работа с базой данных текстов"], summary="Удалить все тексты")
 async def delete_all() -> JSONResponse:
     check = await ReviewDAO.delete(delete_all=True)
     if check:
@@ -95,3 +106,15 @@ async def delete_all() -> JSONResponse:
         {"message": "Ошибка при удалении данных!"},
         status_code=404
     )
+
+
+@app.get(
+    "/sentiment/{text}",
+    tags=["Анализ тональности"],
+    summary="Получить результат анализа тональности текста: positive или negative"
+)
+async def sentiment(text: str) -> JSONResponse:
+    prompt = f"""Determine the sentiment of the following text. Only respond with the exact words "positive" or "negative".
+{text}"""
+    sentiment = await get_mistral_answer(client, content=prompt, model=MODEL)
+    return JSONResponse({"sentiment": sentiment})

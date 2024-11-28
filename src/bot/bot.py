@@ -3,10 +3,11 @@ import json
 import logging
 import os
 
-import requests
-from aiogram import Bot, Dispatcher, F, types
+import httpx
+from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from dotenv import load_dotenv
+from starlette.responses import JSONResponse
 
 from src.mistral import get_mistral_answer
 
@@ -16,12 +17,11 @@ WRONG_COMMAND = "Неправильный формат команды!"
 ID_IS_NOT_INT = "id должен быть целым числом!"
 UNKNOWN_COMMAND = "Неизвестная команда!"
 
-BOT_URL = "http://127.0.0.1:8000"
+URL = "http://127.0.0.1:8000"
 
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_ID = os.getenv("ADMIN_ID")
 bot = Bot(BOT_TOKEN)
 dp = Dispatcher()
 
@@ -32,7 +32,7 @@ HEADERS = {
 logging.basicConfig(level=logging.INFO)
 
 
-def stringify_response(response):
+def stringify_response(response) -> str:
     return json.dumps(response.json(), ensure_ascii=False, indent=4)
 
 
@@ -44,7 +44,8 @@ async def start(message: types.Message):
 @dp.message(Command("get_all"))
 async def get_all(message: types.Message):
     try:
-        response = requests.get(f"{BOT_URL}/get_all")
+        async with httpx.AsyncClient() as client:
+            response = await client.get(f"{URL}/get_all")
         answer = stringify_response(response)
     except:
         answer = REQUEST_ERROR
@@ -58,7 +59,8 @@ async def get_by_id(message: types.Message):
         try:
             review_id = int(tokens[1])
             try:
-                response = requests.get(f"{BOT_URL}/get/{review_id}")
+                async with httpx.AsyncClient() as client:
+                    response = await client.get(f"{URL}/get/{review_id}")
                 answer = stringify_response(response)
             except:
                 answer = REQUEST_ERROR
@@ -76,11 +78,12 @@ async def get_by_id(message: types.Message):
         try:
             review_id = int(review_id)
             try:
-                response = requests.put(
-                    f"{BOT_URL}/edit/",
-                    headers=HEADERS,
-                    json={"id": review_id, "review": review}
-                )
+                async with httpx.AsyncClient() as client:
+                    response = await client.put(
+                        f"{URL}/edit",
+                        headers=HEADERS,
+                        json={"id": review_id, "review": review}
+                    )
                 answer = stringify_response(response)
             except:
                 answer = REQUEST_ERROR
@@ -96,9 +99,10 @@ async def add(message: types.Message):
     try:
         _, review = message.text.split(maxsplit=1)
         try:
-            response = requests.post(
-                f"{BOT_URL}/add", headers=HEADERS, json={"review": review}
-            )
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{URL}/add", headers=HEADERS, json={"review": review}
+                )
             answer = stringify_response(response)
         except:
             answer = REQUEST_ERROR
@@ -114,8 +118,9 @@ async def delete_by_id(message: types.Message):
         try:
             review_id = int(tokens[1])
             try:
-                response = requests.delete(f"{BOT_URL}/delete/{review_id}")
-                answer = stringify_response(response)
+                async with httpx.AsyncClient() as client:
+                    response = await client.delete(f"{URL}/delete/{review_id}")
+                    answer = stringify_response(response)
             except:
                 answer = REQUEST_ERROR
         except ValueError:
@@ -128,7 +133,8 @@ async def delete_by_id(message: types.Message):
 @dp.message(Command("delete_all"))
 async def delete_all(message: types.Message):
     try:
-        response = requests.delete(f"{BOT_URL}/delete_all")
+        async with httpx.AsyncClient() as client:
+            response = await client.delete(f"{URL}/delete_all")
         answer = stringify_response(response)
     except:
         answer = REQUEST_ERROR
@@ -137,12 +143,17 @@ async def delete_all(message: types.Message):
 
 @dp.message(Command("sentiment"))
 async def sentiment(message: types.Message):
-    pass
-#     prompt = f"""Determine the sentiment of the following text. Only respond with the exact words "positive" or "negative".
-#
-# {message.text}"""
-#     mistral_answer = await get_mistral_answer(prompt)
-#     await message.reply(mistral_answer)
+    try:
+        _, review = message.text.split(maxsplit=1)
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(f"{URL}/sentiment/{review}")
+            answer = stringify_response(response)
+        except:
+            answer = REQUEST_ERROR
+    except:
+        answer = WRONG_COMMAND
+    await message.reply(answer)
 
 
 async def main():
