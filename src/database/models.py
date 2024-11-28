@@ -11,7 +11,7 @@ class Review(Base):
 
     def __repr__(self):
         return (f"{self.__class__.__name__}(id={self.id}, "
-                f"review={self.review!r},")
+                f"review={self.review!r})")
 
     def to_dict(self):
         return {
