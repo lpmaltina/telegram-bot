@@ -1,21 +1,12 @@
-import os
-
-from dotenv import load_dotenv
 from fastapi import FastAPI
-from mistralai import Mistral
 from starlette.responses import JSONResponse
 
 from src.database.dao import ReviewDAO
 from src.database.schemas import SReviewAdd, SReviewUpdate
-from src.mistral import get_mistral_answer
-
-load_dotenv()
-
-MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
-MODEL = "open-mistral-nemo"
-client = Mistral(api_key=MISTRAL_API_KEY)
+from src.mistral import MistralModel
 
 app = FastAPI()
+mistral_model = MistralModel()
 
 
 @app.get("/get_all", tags=["Работа с базой данных текстов"], summary="Получить все тексты")
@@ -116,5 +107,5 @@ async def delete_all() -> JSONResponse:
 async def sentiment(text: str) -> JSONResponse:
     prompt = f"""Determine the sentiment of the following text. Only respond with the exact words "positive" or "negative".
 {text}"""
-    sentiment = await get_mistral_answer(client, content=prompt, model=MODEL)
+    sentiment = await mistral_model.get_answer(content=prompt)
     return JSONResponse({"sentiment": sentiment})
